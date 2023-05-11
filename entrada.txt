@@ -1,0 +1,11 @@
+Int b = 7
+Float a = 32.4 *(-8.6 - b) / 6.1E-8;
+d = a ^ b; // Esto es un comentario
+x_33 = 8
+z3Z =; // bruh
+y = " un string"
+a235cz = a * c // 32.3
+/* Comentario */
+
+/* int = 23 s
+ */
