@@ -12,7 +12,7 @@ comentario_bloque = r'\/\*[\s\S]*?\*\/'
 comentario_linea = r'\/\/[^\n]*'
 string = r'\".*?\"'
 tipo_Variable = r'\b(?:[I|i]nt|[F|f]loat|[S|s]tring)\b'
-identificador = r'[a-zA-Z]\w*'
+identificador = r'\b[a-zA-Z]\w*\b'
 asignacion = r'='
 parentesis_apertura = r'\('
 parentesis_cierre = r'\)'
@@ -25,6 +25,8 @@ multiplicacion = r'\*'
 division = r'/'
 potencia = r'\^'
 semicolon = r'\;'
+operador_logico = r'(?:<=|>=|!=|==|<|>)'
+operador_condicional = r'(?:[A|a]nd|[O|o]r|[N|n]ot)'
 
 # Creamos un string de todos los patrones, el orden del patron es importante!
 regex = '|'.join([ string, comentario_bloque, comentario_linea, tipo_Variable, identificador, asignacion, parentesis_apertura, parentesis_cierre, real, flotante, flotante_negativo, entero, resta, multiplicacion, division, potencia, semicolon ])
