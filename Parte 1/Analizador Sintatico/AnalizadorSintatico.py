@@ -5,8 +5,17 @@ instrucciones sean factibles.
 
 """
 
-tokens = [('Int', 'tipo_Variable'), ('b', 'variable'), ('=', 'asignacion'), ('7', 'entero'), (';','semicolon'),('Float', 'tipo_Variable'), ('a', 'variable'), ('=', 'asignacion'), (' 32.4 ', 'flotante'), ('*', 'multiplicacion'), ('(', 'parentesis_apertura'), ('-8.6', 'flotante_negativo'), ('-', 'resta'), ('b', 'variable'), (')', 'parentesis_cierre'), ('/', 'division'), (' 6.1E-8', 'real'), (';', 'semicolon'), ('d', 'variable'), ('=', 'asignacion'), ('a', 'variable'), ('^', 'potencia'), ('b', 'variable'), (';', 'semicolon'), ('// Esto es un comentario', 'comentario_linea'), ('x_33', 'variable'), ('=', 'asignacion'), ('8', 'entero'), ('z3Z', 'variable'), ('=', 'asignacion'), (';', 'semicolon'), ('// bruh', 'comentario_linea'), ('y', 'variable'), ('=', 'asignacion'), ('" un string"', 'string'), ('a235cz', 'variable'), ('=', 'asignacion'), ('a', 'variable'), ('*', 'multiplicacion'), ('c', 'variable'), ('// 32.3', 'comentario_linea'), ('/* Comentario */', 'comentario_bloque'), ('/* int = 23 s\n */', 'comentario_bloque'), ('String', 'tipo_Variable'), ('a', 'variable'), ('=', 'asignacion'), ('b', 'variable'), (';', 'semicolon'), ('-6.8', 'flotante_negativo'), ('- 6.8', 'flotante_negativo')]
-
+tokens = [("if","if") ,("(","parentesis_apertura"), ("i" ,"variable") ,
+    ("<" ,"operador_cond") ,("a" ,"variable"), (")", "parentesis_cierre"),
+    ("{", "broche_apertura") ,("Int", "tipo_Variable") ,("a" ,"variable") ,
+    ("=", "asignacion"),("7", "entero"), (";", "semicolon"),
+    ("}", "broche_cierre") ,("elseif", "elseif"), ("(", "parentesis_apertura"),
+    ("i", "variable") ,("<", "operador_cond"), ("a", "variable"), (")", "parentesis_cierre"),
+    ("{","broche_apertura") ,("Int", "tipo_Variable"), ("a", "variable"),
+    ("=" ,"asignacion"), ("7", "entero"), (";" ,"semicolon"),
+    ("}", "broche_cierre") ,("else", "else"), ("{" ,"broche_apertura"),
+    ("Int", "tipo_Variable") ,("a", "variable"), ("=", "asignacion"),
+    ("7" ,"entero") ,(";", "semicolon") ,("}" ,"broche_cierre")]
 
 
 # Lenguaje a utilizar
@@ -222,16 +231,16 @@ def es_condicional():
     global token
     if token == "if":
         token = sigToken()
-        if token == "parentesis_apertura":
-            token = sigToken()
-            es_condicion()
-            if token == "parentesis_cierre":
-                token = sigToken()
-                es_bloque()
-                while token == "elseif":
-                    es_condicional_elseif()
-                if token == "else":
-                    es_condicional_else()
+    if token == "parentesis_apertura":
+        token = sigToken()
+        es_condicion()
+    if token == "parentesis_cierre":
+        token = sigToken()
+        es_bloque()
+    while token == "elseif":
+        es_condicional_elseif()
+    if token == "else":
+        es_condicional_else()
 
 def es_condicional_elseif():
     global token
