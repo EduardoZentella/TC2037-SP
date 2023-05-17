@@ -5,7 +5,8 @@ instrucciones sean factibles.
 
 """
 
-tokens = [('Int', 'tipo_Variable'), ('b', 'variable'), ('=', 'asignacion'), (' 7', 'entero'),(';','semicolon'), ('Float', 'tipo_Variable'), ('a', 'variable'), ('=', 'asignacion'), (' 32.4 ', 'flotante'), ('*', 'multiplicacion'), ('(', 'parentesis_apertura'), ('-8.6', 'resta'), ('-', 'resta'), ('b', 'variable'), (')', 'parentesis_cierre'), ('/', 'division'), (' 6.1E-8', 'real'), (';', 'semicolon'), ('d', 'variable'), ('=', 'asignacion'), ('a', 'variable'), ('^', 'potencia'), ('b', 'variable'), (';', 'semicolon'), ('// Esto es un comentario', 'comentario_linea'), ('x_33', 'variable'), ('=', 'asignacion'), (' 8', 'entero'), ('z3Z', 'variable'), ('=', 'asignacion'), (';', 'semicolon'), ('// bruh', 'comentario_linea'), ('y', 'variable'), ('=', 'asignacion'), ('" un string"', 'string'), ('a235cz', 'variable'), ('=', 'asignacion'), ('a', 'variable'), ('*', 'multiplicacion'), ('c', 'variable'), ('// 32.3', 'comentario_linea'), ('/* Comentario */', 'comentario_bloque'), ('/* int = 23 s\n */', 'comentario_bloque'), ('String', 'tipo_Variable'), ('a', 'variable'), ('=', 'asignacion'), ('b', 'variable'), (';', 'semicolon')]
+tokens = [('Int', 'tipo_Variable'), ('b', 'variable'), ('=', 'asignacion'), ('7', 'entero'), (';','semicolon'),('Float', 'tipo_Variable'), ('a', 'variable'), ('=', 'asignacion'), (' 32.4 ', 'flotante'), ('*', 'multiplicacion'), ('(', 'parentesis_apertura'), ('-8.6', 'flotante_negativo'), ('-', 'resta'), ('b', 'variable'), (')', 'parentesis_cierre'), ('/', 'division'), (' 6.1E-8', 'real'), (';', 'semicolon'), ('d', 'variable'), ('=', 'asignacion'), ('a', 'variable'), ('^', 'potencia'), ('b', 'variable'), (';', 'semicolon'), ('// Esto es un comentario', 'comentario_linea'), ('x_33', 'variable'), ('=', 'asignacion'), ('8', 'entero'), ('z3Z', 'variable'), ('=', 'asignacion'), (';', 'semicolon'), ('// bruh', 'comentario_linea'), ('y', 'variable'), ('=', 'asignacion'), ('" un string"', 'string'), ('a235cz', 'variable'), ('=', 'asignacion'), ('a', 'variable'), ('*', 'multiplicacion'), ('c', 'variable'), ('// 32.3', 'comentario_linea'), ('/* Comentario */', 'comentario_bloque'), ('/* int = 23 s\n */', 'comentario_bloque'), ('String', 'tipo_Variable'), ('a', 'variable'), ('=', 'asignacion'), ('b', 'variable'), (';', 'semicolon'), ('-6.8', 'flotante_negativo'), ('- 6.8', 'flotante_negativo')]
+
 
 
 # Lenguaje a utilizar
@@ -13,19 +14,19 @@ tokens = [('Int', 'tipo_Variable'), ('b', 'variable'), ('=', 'asignacion'), (' 7
 
 <sentencia> -> <tipo_variable> <variable> <asignacion> <expresion> <Semicolon> <comentario_linea>?| <variable> <asignacion> <expresion> <Semicolon> | <Comentario_linea> | <Comentario_bloque> |<ciclo_for> | <ciclo_while> | <condicional> | <declaracion_funcion> | <llamada_funcion> 
 
-<declaracion_funcion> -> "function" <variable> "(" <parametros_funcion> ")" <bloque>
+<declaracion_funcion> -> "function" <variable> <parentesis_apertura> <parametros_funcion> <parentesis_cierre> <bloque>
 
 <parametros_funcion> -> <tipo_variable> <variable> ("," <tipo_variable> <variable>)* | epsilon
 
-<ciclo_for> -> "for" "(" <variable> <Semicolon> <condicion> <Semicolon> <expresion> ")" <bloque>
+<ciclo_for> -> "for" <parentesis_apertura> <variable> <Semicolon> <condicion> <Semicolon> <expresion> <parentesis_cierre> <bloque>
 
-<ciclo_while> -> "while" "(" <condicion> ")" <bloque>
+<ciclo_while> -> "while" <parentesis_apertura> <condicion> <parentesis_cierre> <bloque>
 
 <condicion> -> <variable> <Operador_Condicional> <variable> (<Operador_Logico> <condicion>)*
 
-<condicional> -> "if" "(" <condicion> ")" <bloque> <condicional_elseif>* <condicional_else>?
+<condicional> -> "if" <parentesis_apertura> <condicion> <parentesis_cierre> <bloque> <condicional_elseif>* <condicional_else>?
 
-<condicional_elseif> -> "elseif" "(" <expresion> ")" <bloque>
+<condicional_elseif> -> "elseif" <parentesis_apertura> <expresion> <parentesis_cierre> <bloque>
 
 <condicional_else> -> "else" <bloque>
 
@@ -39,7 +40,7 @@ tokens = [('Int', 'tipo_Variable'), ('b', 'variable'), ('=', 'asignacion'), (' 7
 
 <termino'> -> <multiplicacion> <factor> <termino'> | <division> <factor> <termino'> | epsilon
 
-<factor> -> <variable> | <entero> | <real> | <flotante>
+<factor> -> <parentesis_apertura> <expresion> <parentesis_cierre> | <variable> | <entero> | <real> | <flotante>
 
 <flotante> -> "flotante" | "flotante_negativo"
 
@@ -63,6 +64,10 @@ tokens = [('Int', 'tipo_Variable'), ('b', 'variable'), ('=', 'asignacion'), (' 7
 
 <Operador_Logico> -> "operador_log"
 
+<parentesis_apertura> -> "parentesis_apertura"
+
+<parentesis_cierre> -> "parentesis_cierre"
+
 """
 
 def sigToken():
@@ -70,7 +75,7 @@ def sigToken():
     global tokens
     i = i + 1
     if i < len(tokens):
-        print(tokens[i][1])
+        print(tokens[i][0])
         return tokens[i][1]
     else:
         return ""
@@ -81,35 +86,51 @@ def showError(expected, token):
 def es_sentencia():
     global token
     global last
+    print("Token inicial: " + token)
     if token == "tipo_Variable":
         last = "tipo_Variable"
-        es_tipo_variable()
+        token = sigToken()
         last = "variable"
-        es_variable()
+        if token == "variable":
+            token = sigToken()
+        else:
+            showError(last, token)
         last = "asignacion"
-        es_asignacion()
+        if token == "asignacion":
+            token = sigToken()
+        else:
+            showError(last, token)
         last = "expresion"
         es_expresion()
         last = "Semicolon"
-        es_Semicolon()
-        if token == "Comentario_linea":
+        if token == "semicolon":
+            token = sigToken()
             last = "Comentario_linea"
-            es_Comentario_linea()
+            if token == "Comentario_linea":
+                token = sigToken()
+        else:
+            showError(last, token)
     elif token == "variable":
         last = "variable"
-        es_variable()
+        token = sigToken()
         last = "asignacion"
-        es_asignacion()
+        if token == "asignacion":
+            token = sigToken()
+        else:
+            showError(last, token)
         last = "expresion"
         es_expresion()
-        last = "Semicolon"
-        es_Semicolon()
+        last = "semicolon"
+        if token == "semicolon":
+            token = sigToken()
+        else:
+            showError(last, token)
     elif token == "Comentario_linea":
         last = "Comentario_linea"
-        es_Comentario_linea()
+        token = sigToken()
     elif token == "Comentario_bloque":
         last = "Comentario_bloque"
-        es_Comentario_bloque()
+        token = sigToken()
     elif token == "for":
         last = "for"
         es_ciclo_for()
@@ -124,75 +145,87 @@ def es_sentencia():
         es_declaracion_funcion()
     elif token == "llamada_funcion":
         last = "llamada_funcion"
+    else:
+        print("Dato inicial no es parte del lenguaje")
 
 def es_declaracion_funcion():
     global token
     if token == "function":
         token = sigToken()
-        es_variable()
-        if token == "(":
+        if token == "variable":
+            token = sigToken()
+        if token == "parentesis_apertura":
             token = sigToken()
             es_parametros_funcion()
-            if token == ")":
+            if token == "parentesis_cierre":
                 token = sigToken()
                 es_bloque()
 
 def es_parametros_funcion():
     global token
     if token == "tipo_Variable":
-        es_tipo_variable()
-        es_variable()
-        while token == ",":
+        token = sigToken()
+        if token == "variable":
             token = sigToken()
-            es_tipo_variable()
-            es_variable()
+        while token == "comma":
+            token = sigToken()
+            if token == "tipo_Variable":
+                token = sigToken()
+            if token == "variable":
+                token = sigToken()
 
 def es_ciclo_for():
     global token
     if token == "for":
         token = sigToken()
-        if token == "(":
-            token = sigToken()
-            es_variable()
-            if token == ";":
-                token = sigToken()
-                es_condicion()
-                if token == ";":
-                    token = sigToken()
-                    es_expresion()
-                    if token == ")":
-                        token = sigToken() 
-                        es_bloque()
+    if token == "parentesis_apertura":
+        token = sigToken()
+    if token == "tipo_variable":
+        token = sigToken()
+    if token == "variable":
+        token = sigToken()
+    if token == "semicolon":
+        token = sigToken()
+        es_condicion()
+    if token == "semicolon":
+        token = sigToken()
+        es_expresion()
+    if token == "parentesis_cierre":
+        token = sigToken() 
+        es_bloque()
 
 def es_ciclo_while():
     global token
     if token == "while":
         token = sigToken()
-        if token == "(":
+        if token == "parentesis_apertura":
             token = sigToken()
             es_condicion()
-            if token == ")":
+            if token == "parentesis_cierre":
                 token = sigToken()
                 es_bloque()
 
-
 def es_condicion():
     global token
-    es_variable()
-    es_Operador_Condicional()
-    es_variable()
+    print("Condicion inicial: " + token)
+    if token == "variable":
+        token = sigToken()
+    if token == "operador_cond":
+        token = sigToken()
+    if token == "variable":
+        token = sigToken()
     while token == "operador_log":
-        es_Operador_Logico()
+        token = sigToken()
         es_condicion()
 
 def es_condicional():
     global token
     if token == "if":
         token = sigToken()
-        if token == "(":
+        if token == "parentesis_apertura":
             token = sigToken()
             es_condicion()
-            if token == ")":
+            if token == "parentesis_cierre":
                 token = sigToken()
                 es_bloque()
                 while token == "elseif":
@@ -204,10 +237,10 @@ def es_condicional_elseif():
     global token
     if token == "elseif":
         token = sigToken()
-        if token == "(":
+        if token == "parentesis_apertura":
             token = sigToken()
-            es_expresion()
-            if token == ")":
+            es_condicion()
+            if token == "parentesis_cierre":
                 token = sigToken()
                 es_bloque()
 
@@ -219,14 +252,14 @@ def es_condicional_else():
 
 def es_bloque():
     global token
-    if token == "{":
+    if token == "broche_apertura":
         token = sigToken()
-        while (token != "}" and 
+        while (token != "broche_cierre" and 
                token in ["tipo_Variable", "variable", "comentario_linea", 
                          "comentario_bloque", "for", "while", "if", 
                          "function", "llamada_funcion"]):
             es_sentencia()
-        if token == "}":
+        if token == "broche_cierre":
             token = sigToken()
 
 def es_expresion():
@@ -236,12 +269,14 @@ def es_expresion():
 
 def es_expresionprime():
     global token
-    while token in ["suma", "resta"]:
-        if token == "suma":
-            es_suma()
-        elif token == "resta":
-            es_resta()
+    if token == "suma":
+        token = sigToken()
         es_termino()
+        es_expresionprime()
+    elif token == "resta":
+        token = sigToken()
+        es_termino()
+        es_expresionprime()
 
 def es_termino():
     global token
@@ -250,129 +285,30 @@ def es_termino():
 
 def es_terminoprime():
     global token
-    while token in ["multiplicacion", "division"]:
-        if token == "multiplicacion":
-            es_multiplicacion()
-        elif token == "division":
-            es_division()
-        es_factor()
-
-def es_factor():
-    global token
-    if token == "variable":
-        es_variable()
-    elif token == "entero":
-        es_entero()
-    elif token == "real":
-        es_real()
-    elif token in ["flotante", "flotante_negativo"]:
-        es_flotante()
-
-def es_flotante():
-    global token
-    if token in ["flotante", "flotante_negativo"]:
-        token = sigToken()
-
-def es_variable():
-    global token
-    if token == "variable":
-        token = sigToken()
-
-def es_asignacion():
-    global token
-    if token == "asignacion":
-        token = sigToken()
-
-def es_entero():
-    global token
-    if token == "entero":
-        token = sigToken()
-
-def es_real():
-    global token
-    if token == "real":
-        token = sigToken()
-
-def es_tipo_variable():
-    global token
-    if token == "tipo_Variable":
-        token = sigToken()
-
-def es_Semicolon():
-    global token
-    if token == "semicolon":
-        token = sigToken()
-
-def es_Comentario_linea():
-    global token
-    if token == "comentario_linea":
-        token = sigToken()
-
-def es_terminoprime():
-    global token
-    while token in ["multiplicacion", "division"]:
-        if token == "multiplicacion":
-            es_multiplicacion()
-        elif token == "division":
-            es_division()
-        es_factor()
-
-def es_factor():
-    global token
-    if token == "variable":
-        es_variable()
-    elif token == "entero":
-        es_entero()
-    elif token == "real":
-        es_real()
-    elif token in ["flotante", "flotante_negativo"]:
-        es_flotante()
-
-def es_flotante():
-    global token
-    if token in ["flotante", "flotante_negativo"]:
-        token = sigToken()
-
-def es_variable():
-    global token
-    if token == "variable":
-        token = sigToken()
-
-def es_asignacion():
-    global token
-    if token == "asignacion":
-        token = sigToken()
-
-def es_entero():
-    global token
-    if token == "entero":
-        token = sigToken()
-
-def es_real():
-    global token
-    if token == "real":
-        token = sigToken()
-
-def es_tipo_variable():
-    global token
-    if token == "tipo_Variable":
-        token = sigToken()
-
-def es_Semicolon():
-    global token
-    if token == "semicolon":
-        token = sigToken()
-
-def es_Comentario_linea():
-    global token
-    if token == "comentario_linea":
-        token = sigToken()
-
-def es_multiplicacion():
-    global token
     if token == "multiplicacion":
         token = sigToken()
+        es_factor()
+        es_terminoprime()
+    elif token == "division":
+        token = sigToken()
+        es_factor()
+        es_terminoprime()
 
+def es_factor():
+    global token
+    if token == "parentesis_apertura":
+        token = sigToken()
+        es_expresion()
+        if token == "parentesis_cierre":
+            token = sigToken()
+    elif token == "variable":
+        token = sigToken()
+    elif token == "entero":
+        token = sigToken()
+    elif token == "real":
+        token = sigToken()
+    elif token == "flotante" or token == "flotante_negativo":
+        token = sigToken()
 
 i = -1
 token = sigToken()
