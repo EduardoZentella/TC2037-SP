@@ -1,0 +1,16 @@
+Int x = 23; // Comentario linea
+a = 34; 
+function Nombre (Int a) {
+Int c = a + b;
+
+}
+/*Comentario bloque
+*/
+
+Int b = 12;
+Int c = a + b + 2;
+
+for (Int a = 2; a < 12; a++;){Int b = 2 + 1;}
+while(a>b And b == 2) {Int x = 2;}
+if (a > s) {Int d = 33;} elseif(a == 2){a = 3;}
+
