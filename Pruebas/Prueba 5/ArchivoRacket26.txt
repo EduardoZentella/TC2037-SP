@@ -1,0 +1,6 @@
+Int b = 16;
+
+Int x = 33 - -2;
+
+for (Int a; a == 22; a++;){
+Int s = 266;}

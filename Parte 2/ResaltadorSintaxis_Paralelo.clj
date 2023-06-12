@@ -1,9 +1,3 @@
-;(def entrada "ArchivoRacket.txt")
-;(def entrada2 "ArchivoRacket2.txt")
-;(def entrada3 "ArchivoRacket3.txt")
-;(def entrada4 "ArchivoRacket4.txt")
-;(def entradas [entrada entrada2 entrada3 entrada4])
-
 (require '[clojure.java.io :as io])
 (require '[clojure.string :as string])
 
@@ -15,7 +9,6 @@
     (map #(.getName %) archivos)))
 
 (def entradas (leer-archivos))
-(print entradas)
 
 (declare extraer-seccion! check-token lexico traverseLines tokens)
 
@@ -634,12 +627,12 @@
 
 (defn check-token [tokens]
   (let [evaluated-tokens (vec tokens)]
-  (locking token (locking i
     (dorun
-      (map (fn [x]
+      (pmap (fn [x]
               (do
+              (locking i (locking token
                 (reset! token (sigToken x))
-                (es-sentencia x)))
+                (es-sentencia x)))))
             evaluated-tokens))
   
     (if (= @token "")
@@ -647,7 +640,7 @@
         (do
           (show-error @lastToken @token)
           (println "\nNOPE")
-        ))))))
+        ))))
 
 (def factores ["flotante" "entero" "variable" "flotante-negativo"])
 (declare resultado)

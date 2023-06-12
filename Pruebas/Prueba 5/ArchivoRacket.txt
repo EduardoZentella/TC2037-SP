@@ -1,0 +1,12 @@
+Int a = 23;
+
+Int x = 33 + 2;
+
+function Nombre (Int a){Int n = 85;}
+
+
+/*Comentario de bloque
+
+Int a = 676;
+
+*/

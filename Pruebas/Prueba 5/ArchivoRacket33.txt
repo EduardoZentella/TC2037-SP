@@ -1,0 +1,6 @@
+Int d = 99;
+
+x = 22;
+
+if(a == x){Int x = 95867;}elseif(b == 566){Int m = 21;}
+else{Int b = 756;}

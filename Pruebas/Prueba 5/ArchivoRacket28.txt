@@ -1,0 +1,5 @@
+Int c = 87;
+
+v = 75;
+
+while( v == s){Int z = 12;}
