@@ -1,15 +1,43 @@
-(def entrada "ArchivoRacket.txt")
-(def contenido (slurp entrada))
+(require '[clojure.java.io :as io])
+(require '[clojure.string :as string])
 
-(declare extraer-seccion!)
+(defn leer-archivos []
+  (let [archivos (->> (file-seq (io/file "."))
+                      (filter #(.isFile %))
+                      (filter #(string/ends-with? (.getName %) ".txt"))
+                      )]
+    (map #(.getName %) archivos)))
+
+(def entradas (leer-archivos))
+(declare extraer-seccion! check-token lexico traverseLines tokens)
 
 (def palabra-especial ["while" "for" "if" "elseif" "else" "function"])
+
+(defn extraer-elseif [lista]
+  (loop [acc '() lst lista]
+  (cond 
+   (= (first lst) "elseif")
+    (do
+     (let [palabra (first lst) result     
+      (extraer-seccion! (rest lst) "}") ]
+      (let [seccion (first result) lst (first (rest result))]
+      (recur (concat acc (cons palabra seccion)) lst))))
+   (= (first lst) "else") 
+    (let [palabra (first lst) result     
+      (extraer-seccion! (rest lst) "}") ]
+      (let [seccion (first result) lst (first (rest result))]
+      [(concat acc (cons palabra seccion)) lst])))))
 
 ; Función auxiliar para recorrer la lista plana
 (defn recorrer-aux [lst acc]
   (cond
     (empty? lst) ; Caso base: la lista está vacía, se devuelve el acumulador
      (reverse acc)
+    (= (first lst) "if") 
+     (let [palabra (first lst) result (extraer-seccion! (rest lst) "}") seccion (first result) lst (rest result)]
+    (let [result-else (extraer-elseif (first lst)) seccion-esle (first result-else) lst (rest result-else)] 
+     (recorrer-aux (first lst) (cons (concat (cons palabra seccion) seccion-esle) acc))
+      ))
     (not (some #{(first lst)} palabra-especial)) ; No es una palabra especial
      (let [elemento (first lst)]
      (cond
@@ -20,16 +48,16 @@
         (recorrer-aux (rest lst) (concat (cons (first acc) (list (list elemento))) (rest acc)))
         
       :else ; Caso recursivo: se continúa recorriendo la lista
-        (let [palabra (first lst) result (extraer-seccion! palabra (rest lst) ";") ]
+        (let [palabra (first lst) result (extraer-seccion! (rest lst) ";") ]
           (let [seccion (first result) lst (first (rest result))]
           (recorrer-aux lst (cons (cons palabra seccion) acc))))))
     
   :else ; Palabra especial
-    (let [palabra (first lst) result (extraer-seccion! palabra (rest lst) "}") ]
+    (let [palabra (first lst) result (extraer-seccion! (rest lst) "}") ]
       (let [seccion (first result) lst (first (rest result))] ;(print (format " %s" (first lst)))
       (recorrer-aux lst (cons (cons palabra seccion) acc))))))
 
-(defn extraer-seccion! [elementoIni lst elementoFin]
+(defn extraer-seccion! [lst elementoFin]
   ; Función auxiliar para recorrer la sección y extraer el bloque correspondiente
   (defn loops [lst2 acc conteo]
     (cond
@@ -45,7 +73,7 @@
 (defn recorrer-lista [lista]
   (recorrer-aux lista [])) ; Se llama a la función auxiliar para recorrer la lista plana and obtener la lista anidada resultante.
 
-(def string "\".*?\"")
+(def string "\"[.|\\s|\\S]*?\"")
 (def comentario-bloque "/\\*[^*]*\\*+([^/*][^*]*\\*+)*/")
 (def comentario-linea "\\/\\/[^#\n]*")
 (def condicional "\\bif\\b")
@@ -109,15 +137,6 @@
     potencia "|"
     semicolon
     ))
-
-(def pattern (re-pattern regex))
-(def matches (re-seq pattern contenido))
-(defn matchesV-matchesS [matches]
-  (mapv (comp first) matches))
-(def matches-String (matchesV-matchesS matches))
-;(print matches-String)
-(def listaDeLineasEnFormato (recorrer-lista matches-String))
-;(print listaDeLineasEnFormato)
 
 (defn substring-after-match [string regex]
   (let [matcher (re-matcher (re-pattern regex) string)]
@@ -263,9 +282,6 @@
       :else (recur tokens (rest resto)))))
 
 
-(def tokens (map lexico listaDeLineasEnFormato))
-;(print tokens)
-
 (def i (atom -1))
 (def token (atom "valor inicial"))
 (def lastToken (atom "initial"))
@@ -298,8 +314,9 @@
       (cond
         (= @token "parentesis-cierre")
           (Set-SigToken "expresion" lineaToken)
-        (some  #{@token} ["variable" "entero" "real" "flotante" "flotante-negativo"])
-          (Set-SigToken "expresion" lineaToken)))
+        (some  #{@token} ["string" "variable" "entero" "real" "flotante" "flotante-negativo"])
+          (Set-SigToken "expresion" lineaToken)
+        :else (reset! token "Factor - No encontrado")))
 
 (defn es-terminoprime [lineaToken]
   (cond
@@ -602,7 +619,7 @@
     :else
      (show-error @lastToken @token)))
 
-(defn check-token []
+(defn check-token [tokens]
 
   (dorun (map (fn [x]
     (do
@@ -617,5 +634,491 @@
         (println "\nNOPE")
         )))
 
+(def factores ["flotante" "entero" "variable" "flotante-negativo"])
+(declare resultado)
+(defn StringToInteger [x]
+  (Integer/parseInt x)
+)
 
-(check-token)
+(defn check-Var [variables var]
+  (cond
+  (empty? variables) false
+  (= var (first (first variables))) true
+  :else (check-Var (rest variables) var)))
+
+(defn set-Var [lista data]
+  (cond
+    (= (first data) (first (first lista))) (cons (list (first data) (second data)) (rest lista))
+    :else (cons (first lista) (set-Var (rest lista) data))))
+
+(defn get-Var [variables var]
+  (cond
+    (= var (first (first variables))) (second (first variables))
+    :else (get-Var (rest variables) var)))
+
+(defn es-suma? [lista]
+  (cond
+    (and
+      (some #{(second (first lista))} factores)
+      (= "suma" (second (second lista)))
+      (some #{(second (nth lista 2))} factores)
+     )true
+     :else false
+    ))
+
+(defn eval-suma [x y]
+  (+ (if (string? x) (StringToInteger x) x) (if (string? y) (StringToInteger y) y)))
+
+(defn es-resta? [lista]
+  (cond
+    (and
+      (some #{(second (first lista))} factores)
+      (= "resta" (second (second lista)))
+      (some #{(second (nth lista 2))} factores)
+     )true
+     :else false
+    ))
+
+(defn eval-resta [x y]
+  (- (if (string? x) (StringToInteger x) x) (if (string? y) (StringToInteger y) y)))
+
+(defn es-multiplicacion? [lista]
+  (cond
+    (and
+      (some #{(second (first lista))} factores)
+      (= "multiplicacion" (second (second lista)))
+      (some #{(second (nth lista 2))} factores)
+     )true
+     :else false
+    ))
+
+(defn eval-multiplicacion [x y]
+  (* (if (string? x) (StringToInteger x) x) (if (string? y) (StringToInteger y) y)))
+
+(defn es-division? [lista]
+  (cond
+    (and
+      (some #{(second (first lista))} factores)
+      (= "division" (second (second lista)))
+      (some #{(second (nth lista 2))} factores)
+     )true
+     :else false
+    ))
+
+(defn eval-division [x y]
+  (if (zero? (if (string? x) (StringToInteger x) x))
+      (throw (Exception. "Error: No se puede dividir entre 0"))
+      (/ (if (string? x) (StringToInteger x) x) (if (string? y) (StringToInteger y) y))))
+
+(defn es-asignacion? [lista]
+  (cond
+    (and (= "variable" (second (first lista)))
+       (= "asignacion" (second (second lista)))
+       (some #{(second (nth lista 2))} factores) 
+    ) true
+    :else false
+  ))
+
+(defn match-position [line given-index index]
+  (cond (= given-index index) (first line)
+        :else (match-position (rest line) given-index (inc index))))
+
+(defn traverse-line-tokens [line tokens-list sum n-ops index data templist variables]
+  (cond 
+    (empty? tokens-list)
+      (do
+        (reset! data (concat @data (list sum)))
+        @data)
+        
+    (= (second (first tokens-list)) "asignacion")
+      (do
+        (reset! templist (concat @templist (list (match-position line (- index 1) 0))))
+        (reset! templist (concat @templist (list (first tokens-list))))
+        (reset! templist (concat @templist (list (second tokens-list))))
+
+        (cond
+          (es-asignacion? @templist)
+            (let [ sumTemp ((comp first first rest rest ) @templist)]
+            (reset! data (list (first (first @templist))))
+            (reset! templist [])
+            (traverse-line-tokens line (rest tokens-list) sumTemp n-ops (inc index) data templist variables))
+          :else false))
+        
+    (or (= (second (first tokens-list)) "suma")
+        (= (second (first tokens-list)) "resta")
+        (= (second (first tokens-list)) "multiplicacion")
+        (= (second (first tokens-list)) "division"))
+      (do
+        (reset! templist (concat @templist (list (match-position line (- index 1) 0))))
+        (reset! templist (concat @templist (list (first tokens-list))))
+        (reset! templist (concat @templist (list (second tokens-list))))
+        (cond 
+         (es-suma? @templist)
+           (cond 
+             (= 0 n-ops)
+              (traverse-line-tokens 
+               line 
+               (rest (rest tokens-list)) 
+               (eval-suma
+                 (cond 
+                   (= "variable" (second (first @templist))) 
+                    (get-Var @variables (first (first @templist)))
+                   :else
+                    (first (first @templist))
+                   ) 
+                  (cond 
+                    (= "variable" (second (first (rest (rest @templist)))) )
+                      (get-Var @variables (first (first (rest (rest @templist)))))
+                    :else
+                      (first (first (rest (rest @templist))))
+                    )
+                  ) 
+               (+ n-ops 1) 
+               (+ index 2) 
+               data 
+               (do (reset! templist []) templist)
+               variables)
+            :else
+              (traverse-line-tokens 
+                line 
+                (rest (rest tokens-list))
+                (eval-suma 
+                  sum
+                  (cond 
+                   (= "variable" (second (first (rest (rest @templist))))) 
+                    (get-Var @variables (first (first (rest (rest @templist)))))
+                   :else
+                    (first (first (rest (rest @templist))))
+                   )
+                ) 
+              (+ n-ops 1) 
+              (+ index 2) 
+              data 
+              (do (reset! templist []) templist)
+              variables)
+               )
+          
+                
+          (es-resta? @templist)
+           (cond 
+             (= 0 n-ops) 
+              (traverse-line-tokens 
+               line 
+               (rest (rest tokens-list)) 
+               (eval-resta
+                 (cond 
+                   (= "variable" (second (first @templist))) 
+                    (get-Var @variables (first (first @templist)))
+                   :else
+                    (first (first @templist))
+                   ) 
+                  (cond 
+                    (= "variable" (second (first (rest (rest @templist)))) )
+                      (get-Var @variables (first (first (rest (rest @templist)))))
+                    :else
+                      (first (first (rest (rest @templist))))
+                    )
+                  ) 
+               (+ n-ops 1) 
+               (+ index 2) 
+               data 
+               (do (reset! templist []) templist)
+               variables)
+            :else
+              (traverse-line-tokens 
+                line 
+                (rest (rest tokens-list))
+                (eval-resta 
+                  sum
+                  (cond 
+                   (= "variable" (second (first (rest (rest @templist))))) 
+                    (get-Var @variables (first (first (rest (rest @templist)))))
+                   :else
+                    (first (first (rest (rest @templist))))
+                   )
+                ) 
+              (+ n-ops 1) 
+              (+ index 2) 
+              data 
+              (do (reset! templist []) templist)
+              variables)
+               )
+                
+          (es-multiplicacion? @templist)
+           (cond 
+             (= 0 n-ops) 
+              (traverse-line-tokens 
+               line 
+               (rest (rest tokens-list)) 
+               (eval-multiplicacion
+                 (cond 
+                   (= "variable" (second (first @templist))) 
+                    (get-Var @variables (first (first @templist)))
+                   :else
+                    (first (first @templist))
+                   ) 
+                  (cond 
+                    (= "variable" (second (first (rest (rest @templist)))) )
+                      (get-Var @variables (first (first (rest (rest @templist)))))
+                    :else
+                      (first (first (rest (rest @templist))))
+                    )
+                )
+               (+ n-ops 1) 
+               (+ index 2) 
+               data 
+               (do (reset! templist []) templist)
+               variables)
+            :else
+              (traverse-line-tokens 
+                line 
+                (rest (rest tokens-list))
+                (eval-multiplicacion 
+                  sum
+                  (cond 
+                   (= "variable" (second (first (rest (rest @templist))))) 
+                    (get-Var @variables (first (first (rest (rest @templist)))))
+                   :else
+                    (first (first (rest (rest @templist))))
+                   )
+                ) 
+              (+ n-ops 1) 
+              (+ index 2) 
+              data 
+              (do (reset! templist []) templist)
+              variables)
+               )
+                
+          (es-division? @templist)
+           (cond 
+             (= 0 n-ops) 
+              (traverse-line-tokens 
+               line 
+               (rest (rest tokens-list)) 
+               (eval-division
+                 (cond 
+                   (= "variable" (second (first @templist))) 
+                    (get-Var @variables (first (first @templist)))
+                   :else
+                    (first (first @templist))
+                   ) 
+                  (cond 
+                    (= "variable" (second (first (rest (rest @templist)))) )
+                      (get-Var @variables (first (first (rest (rest @templist)))))
+                    :else
+                      (first (first (rest (rest @templist))))
+                    )
+                  ) 
+               (+ n-ops 1) 
+               (+ index 2) 
+               data 
+               (do (reset! templist []) templist)
+               variables)
+            :else
+              (traverse-line-tokens 
+                line 
+                (rest (rest tokens-list))
+                (eval-division 
+                  sum
+                  (cond 
+                   (= "variable" (second (first (rest (rest @templist))))) 
+                    (get-Var @variables (first (first (rest (rest @templist)))))
+                   :else
+                    (first (first (rest (rest @templist))))
+                   )
+                ) 
+              (+ n-ops 1) 
+              (+ index 2) 
+              data 
+              (do (reset! templist []) templist)
+              variables)
+            )
+          :else false 
+          )
+        )
+      (some #{(second (first tokens-list))} ["comentario-bloque" "function" "for"])
+        false
+      :else
+        (do
+          (reset! templist [])
+          (traverse-line-tokens line (rest tokens-list) sum n-ops (inc index) data templist variables))
+  )
+)
+            
+            
+(def templist (atom []))
+(def data (atom []))
+(def variablesList (atom []))
+(def variablesAux (atom []))
+(def resultado (atom []))
+
+(defn traverseLines [lista variables variablesAux]
+  (cond 
+  (empty? lista) @variables
+  :else 
+   (do
+    (reset! resultado (traverse-line-tokens (first lista) (first lista) 0 0 0 data templist variables))
+      (cond 
+       (not (= @resultado false))
+        (cond 
+         (not (check-Var @variables (first @resultado)))
+          (do
+           (reset! variables (concat @variables (list (list (first @resultado) (second @resultado)))))
+           (traverseLines (rest lista) variables variablesAux))
+         :else
+           (do
+             (reset! variablesAux (set-Var @variables @resultado))
+             (reset! variables '())
+             (reset! variables @variablesAux)
+             (reset! variablesAux '())
+             (traverseLines (rest lista) variables variablesAux)
+            )
+        )
+       :else
+        (do
+          (print (format "\nOperacion: %s invalida\n" ((comp first first first) lista)))
+          (traverseLines (rest lista) variables variablesAux)
+        )
+      )
+    )
+  )
+)
+
+
+(defn get-css-class [token]
+(locking token
+  (cond
+   (= token "string") "Orange"
+   (= token "comentario-bloque") "Silver"
+   (= token "comentario-linea") "Gold"
+   (= token "if") "DarkSlateGrey"
+   (= token "elseif") "DarkRed"
+   (= token "else") "DarkRed"
+   (= token "for") "SteelBlue"
+   (= token "while") "Lime"
+   (= token "function") "DarkViolet"
+   (= token "comma") "DeepSkyBlue"
+   (= token "llamada-funcion") "Aqua"
+   (= token "operador-condicional") "Coral"
+   (= token "operador-logico") "DarkTurquoise"
+   (= token "tipo-variable") "FireBrick"
+   (= token "variable") "IndianRed"
+   (= token "asignacion") "HotPink"
+   (= token "parentesis-apertura") "Green"
+   (= token "parentesis-cierre") "Green"
+   (= token "llave-apertura") "Blue"
+   (= token "llave-cierre") "Blue"
+   (= token "real") "Fuchsia"
+   (= token "flotante-negativo") "Gray"
+   (= token "flotante") "Purple"
+   (= token "entero") "Red"
+   (= token "suma") "DarkGoldenrod"
+   (= token "resta") "DarkKhaki"
+   (= token "multiplicacion") "OliveDrab"
+   (= token "division") "Olive"
+   (= token "potencia") "Goldenrod"
+   (= token "semicolon") "Black"
+   :else "Black"
+   ))
+  )
+
+(defn generar-lista-html [lineaDeTokens]
+  (str
+    "\n<p>"
+    (apply str (map (fn [x] 
+                      (str "\n<span class='" 
+                           (get-css-class (second  x)) 
+                           "'>" 
+                           (first x) 
+                           "</span>")) lineaDeTokens))
+    "\n</p>"
+  )
+)
+
+
+(defn generar-html [Tokens]
+  (str
+   "<html>
+    <head>
+      <style>
+        .Orange { color: orange; }
+        .Silver { color: Silver; }
+        .Gold { color: Gold; }
+        .DarkSlateGrey { color: DarkSlateGrey; }
+        .DarkRed { color: DarkRed; }
+        .SteelBlue { color: SteelBlue; }
+        .Lime { color: Lime; }
+        .DarkTurquoise { color: DarkTurquoise; }
+        .DeepSkyBlue { color: DeepSkyBlue; }
+        .Aqua { color: Aqua; }
+        .Coral { color: Coral; }
+        .IndianRed { color: IndianRed; }
+        .HotPink { color: HotPink; }
+        .Green { color: Green; }
+        .Blue { color: Blue; }
+        .Fuchsia { color: Fuchsia; }
+        .Gray { color: Gray; }
+        .Purple { color: Purple; }
+        .Red { color: Red; }
+        .DarkGoldenrod { color: DarkGoldenrod; }
+        .DarkKhaki { color: DarkKhaki; }
+        .OliveDrab { color: OliveDrab; }
+        .Olive { color: Olive; }
+        .Goldenrod { color: Goldenrod; }
+        .Black { color: Black; }
+        .White { color: White; }
+        .FireBrick { color: FireBrick; }
+        .DarkViolet { color: DarkViolet; }
+      </style>
+    </head>
+    <body>"
+      (apply str (map generar-lista-html Tokens))
+    "</body>
+    </html>"
+   )
+)
+
+(defn escribir-html [nombre html]
+  ( let [htmlNombre (clojure.string/replace nombre #"\.txt$" ".html") ]
+  (spit htmlNombre html))
+  )
+
+(def pattern (re-pattern regex))
+(defn matchesV-matchesS [matches]
+  (mapv (comp first) matches))
+;(def matches (re-seq pattern contenido))
+;(def matches-String (matchesV-matchesS matches))
+;(def listaDeLineasEnFormato (recorrer-lista matches-String))
+;(def tokens (map lexico listaDeLineasEnFormato))
+;;(check-token)
+;(def variablesList (atom [])) ; declarando la lista de variables, un ejemplo de variablesList puede ser '(("x" 10) ("y" 20) ("z" 30))
+;(def variablesAux (atom [])) ; lista auxiliar
+;(def resultado (atom [])) ; resultado de operaciones
+;(reset! variablesAux (traverseLines tokens variablesList variablesAux))
+;(reset! variablesList []) ; vaciar la lista original
+;(reset! variablesList @variablesAux) ; llenar la lista original con la lista auxiliar
+;(println "\n=============================================================================================================================\n")
+;(println @variablesList)
+
+(time (doall
+ (map   
+  (fn [x] 
+      (let 
+        [
+         contenido (slurp x)
+         matches (re-seq pattern contenido)
+         matches-String (matchesV-matchesS matches)
+         listaDeLineasEnFormato (recorrer-lista matches-String)
+         tokens (map lexico listaDeLineasEnFormato)
+        ] 
+      (check-token tokens)
+      (reset! variablesAux (traverseLines tokens variablesList variablesAux))
+      (reset! variablesList []) 
+      (reset! variablesList @variablesAux)
+      (println "\n=============================================================================================================================\n")
+      (println @variablesList)
+      (let [html (generar-html tokens)]
+      (escribir-html x html))
+      )
+    ) 
+    entradas)))
